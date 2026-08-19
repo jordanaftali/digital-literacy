@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Talking to People Online</title>
+<style>
+  :root{
+    --bg:#EAF3F5;
+    --panel:#FFFFFF;
+    --ink:#1F2430;
+    --ink-soft:#55606B;
+    --accent:#E8A33D;
+    --accent-deep:#C17F1E;
+    --teal:#2D6E7E;
+    --teal-soft:#DCEEF1;
+    --safe:#4F8A5B;
+    --safe-soft:#E3F0E5;
+    --danger:#C1443C;
+    --danger-soft:#F6DEDC;
+    --line:#C9DBDD;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-body);
+    height:100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body{
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; padding:20px;
+  }
+  .stage{
+    width:100%; max-width:380px;
+  }
+
+  /* progress dots */
+  .progress{
+    display:flex; gap:6px; justify-content:center; margin-bottom:14px;
+  }
+  .progress .dot{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--line);
+    transition: background .2s ease, transform .2s ease;
+  }
+  .progress .dot.done{ background: var(--teal); }
+  .progress .dot.current{ background: var(--accent); transform: scale(1.35); }
+
+  /* phone frame */
+  .phone{
+    background: var(--panel);
+    border-radius: 28px;
+    border: 1px solid var(--line);
+    box-shadow: 0 18px 40px -20px rgba(31,36,48,0.35);
+    padding: 26px 22px 22px;
+    min-height: 440px;
+    display:flex; flex-direction:column;
+  }
+  .phone .content{
+    flex:1;
+    display:flex; flex-direction:column; justify-content:center;
+    gap:14px;
+  }
+
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--teal);
+    text-transform: uppercase;
+  }
+  h1{
+    font-size: 21px; line-height:1.25; margin:0 0 2px;
+    letter-spacing:-0.01em;
+  }
+  p.body-text{
+    font-size:14.5px; line-height:1.5; color:var(--ink-soft); margin:0;
+  }
+
+  /* icon */
+  .icon-wrap{
+    width:56px; height:56px; border-radius:16px;
+    background: var(--teal-soft);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:2px;
+  }
+  .icon-wrap.warn{ background: var(--danger-soft); }
+  .icon-wrap.ok{ background: var(--safe-soft); }
+  .icon-wrap svg{ width:28px; height:28px; }
+
+  /* data meter, the signature element */
+  .meter-row{
+    display:flex; align-items:center; gap:8px; margin-top:4px;
+  }
+  .meter-label{
+    font-family: var(--font-mono); font-size:10.5px; color:var(--ink-soft);
+    letter-spacing:0.03em; text-transform:uppercase; min-width:64px;
+  }
+  .meter{
+    display:flex; gap:4px;
+  }
+  .meter .seg{
+    width:9px; height:9px; border-radius:2px;
+    background: var(--line);
+  }
+  .meter .seg.fill{ background: var(--teal); }
+  .meter.risk .seg.fill{ background: var(--danger); }
+  .meter-note{
+    font-family: var(--font-mono); font-size:11px; color:var(--ink-soft);
+  }
+
+  /* chat bubble mock */
+  .bubble{
+    background: var(--teal-soft);
+    border-radius: 14px 14px 14px 4px;
+    padding:10px 13px;
+    font-size:13.5px;
+    color:var(--ink);
+    max-width: 88%;
+    line-height:1.4;
+  }
+  .bubble.danger{
+    background: var(--danger-soft);
+    border-radius: 14px 14px 14px 4px;
+  }
+
+  /* people row */
+  .people-row{ display:flex; gap:-4px; margin-left:-2px; }
+  .avatar{
+    width:30px; height:30px; border-radius:50%;
+    background: var(--accent);
+    border:2px solid var(--panel);
+    margin-left:-8px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-size:11px; color:#fff; font-weight:600;
+  }
+  .avatar:first-child{ margin-left:0; }
+
+  /* warning list */
+  .warn-list{ display:flex; flex-direction:column; gap:10px; }
+  .warn-item{
+    display:flex; align-items:flex-start; gap:10px;
+    background: var(--danger-soft);
+    border-radius:10px; padding:9px 11px;
+  }
+  .warn-item svg{ width:16px; height:16px; flex-shrink:0; margin-top:2px; }
+  .warn-item span{ font-size:13px; line-height:1.4; }
+
+  /* quiz options */
+  .options{ display:flex; flex-direction:column; gap:10px; margin-top:4px; }
+  .option-btn{
+    text-align:left;
+    border:1.5px solid var(--line);
+    background:var(--panel);
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:14px;
+    font-family:var(--font-body);
+    color:var(--ink);
+    cursor:pointer;
+  }
+  .option-btn:active{ transform: scale(0.98); }
+  .option-btn.correct{
+    border-color: var(--safe); background: var(--safe-soft); color: #2C5233;
+  }
+  .option-btn.wrong{
+    border-color: var(--danger); background: var(--danger-soft); color: #7A2A24;
+  }
+  .option-btn[disabled]{ cursor:default; }
+  .feedback{
+    font-size:13px; line-height:1.45; padding:10px 12px; border-radius:10px;
+    display:none;
+  }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background:var(--safe-soft); color:#2C5233; }
+  .feedback.no{ background:var(--danger-soft); color:#7A2A24; }
+
+  /* nav */
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:16px;
+  }
+  .navbtn{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:0.03em;
+    background:none; border:none; color:var(--teal); padding:10px 6px;
+    cursor:pointer;
+  }
+  .navbtn:disabled{ color: var(--line); cursor:default; }
+  .navbtn.primary{
+    background: var(--accent); color:#3A2400;
+    border-radius: 10px; padding:10px 18px; font-weight:700;
+  }
+  .navbtn.primary:disabled{ background: var(--line); color:#8A97A0; }
+  .counter{
+    font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="progress" id="progress"></div>
+  <div class="phone">
+    <div class="content" id="content"></div>
+    <div class="nav">
+      <button class="navbtn" id="prevBtn">◂ Back</button>
+      <span class="counter" id="counter"></span>
+      <button class="navbtn primary" id="nextBtn">Next ▸</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- Icons (inline SVG, no external assets) ----
+const I = {
+  chat: `<svg viewBox="0 0 24 24" fill="none" stroke="#2D6E7E" stroke-width="1.8"><path d="M4 12c0-4.4 3.6-8 8-8s8 3.6 8 8-3.6 8-8 8c-1.1 0-2.1-.2-3-.6L4 20l1.1-4.6C4.4 14.4 4 13.2 4 12z"/></svg>`,
+  sms: `<svg viewBox="0 0 24 24" fill="none" stroke="#2D6E7E" stroke-width="1.8"><rect x="3" y="5" width="18" height="13" rx="2"/><path d="M3 6l9 7 9-7"/></svg>`,
+  mic: `<svg viewBox="0 0 24 24" fill="none" stroke="#2D6E7E" stroke-width="1.8"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>`,
+  video: `<svg viewBox="0 0 24 24" fill="none" stroke="#2D6E7E" stroke-width="1.8"><rect x="3" y="6" width="12" height="12" rx="2"/><path d="M15 10l6-3v10l-6-3"/></svg>`,
+  people: `<svg viewBox="0 0 24 24" fill="none" stroke="#2D6E7E" stroke-width="1.8"><circle cx="8" cy="9" r="3"/><circle cx="17" cy="10" r="2.6"/><path d="M3 20c0-3 2.5-5 5-5s5 2 5 5M14 20c0-2.2 1.6-4 3.5-4s3.5 1.8 3.5 4"/></svg>`,
+  shield: `<svg viewBox="0 0 24 24" fill="none" stroke="#C1443C" stroke-width="1.8"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg>`,
+  warn: `<svg viewBox="0 0 24 24" fill="none" stroke="#C1443C" stroke-width="2"><path d="M12 4L2 20h20L12 4z"/><path d="M12 10v4M12 17v.5"/></svg>`,
+  block: `<svg viewBox="0 0 24 24" fill="none" stroke="#C1443C" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg>`,
+  flag: `<svg viewBox="0 0 24 24" fill="none" stroke="#C1443C" stroke-width="1.8"><path d="M5 3v18"/><path d="M5 4h13l-3 4 3 4H5"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" fill="none" stroke="#4F8A5B" stroke-width="2"><path d="M4 12l6 6L20 6"/></svg>`,
+};
+
+function meter(filled, total, risk){
+  let segs = "";
+  for(let i=0;i<total;i++){
+    segs += `<div class="seg ${i<filled ? "fill":""}"></div>`;
+  }
+  return `<div class="meter${risk? " risk":""}">${segs}</div>`;
+}
+
+// ---- Lesson steps ----
+const steps = [
+  {
+    type:"info",
+    eyebrow:"Lesson · Talking Online",
+    icon:"chat", iconTone:"",
+    title:"Ways to talk to people on your phone",
+    body:"There are several ways to send a message or talk to someone. Each one uses a different amount of data, which is the internet you pay for. Let's look at them.",
+  },
+  {
+    type:"info",
+    eyebrow:"Method 1", icon:"sms",
+    title:"Text message (SMS)",
+    body:"This is the oldest way to send a message. It works even without the internet, using your phone's signal. It usually costs a small amount per message.",
+    extra: `<div class="meter-row"><span class="meter-label">Data use</span>${meter(1,5)}<span class="meter-note">very low</span></div>`
+  },
+  {
+    type:"info",
+    eyebrow:"Method 2", icon:"chat",
+    title:"Chat apps",
+    body:"Apps like WhatsApp or Messenger send messages using the internet instead of phone signal. You need Wi-Fi or mobile data, but messages themselves are free.",
+    extra: `<div class="meter-row"><span class="meter-label">Data use</span>${meter(2,5)}<span class="meter-note">low</span></div>`
+  },
+  {
+    type:"info",
+    eyebrow:"Method 3", icon:"mic",
+    title:"Voice notes",
+    body:"Press and hold the microphone button, speak your message, then let go to send. Useful if typing is slow or hard for you.",
+    extra: `<div class="meter-row"><span class="meter-label">Data use</span>${meter(3,5)}<span class="meter-note">medium</span></div>`
+  },
+  {
+    type:"info",
+    eyebrow:"Method 4", icon:"video",
+    title:"Phone & video calls",
+    body:"Calling uses the most data, especially video. When possible, connect to Wi-Fi first. It saves money and gives a clearer call.",
+    extra: `<div class="meter-row"><span class="meter-label">Data use</span>${meter(5,5)}<span class="meter-note">high</span></div>`
+  },
+  {
+    type:"info",
+    eyebrow:"Group chats", icon:"people",
+    title:"Talking with more than one person",
+    body:"A group chat lets several people see and reply to the same messages. This is useful for family or community groups. Everyone added can see what is sent.",
+    extra: `<div class="people-row"><div class="avatar">A</div><div class="avatar">B</div><div class="avatar">C</div><div class="avatar">+2</div></div>`
+  },
+  {
+    type:"info",
+    eyebrow:"Part 2", icon:"shield", iconTone:"warn",
+    title:"Now: staying safe",
+    body:"Being able to message anyone is powerful. It also means strangers can message you too. The next few screens show how to handle that safely.",
+  },
+  {
+    type:"quiz",
+    eyebrow:"Try it", icon:"chat",
+    title:"A message from someone you don't know",
+    bubble:{ text:"Hi! I saw your profile. What's your home address and what school do you go to?", tone:"danger" },
+    question:"What's the safest thing to do?",
+    options:[
+      { text:"Reply and share the details", correct:false, feedback:"Sharing your address or school with a stranger can put you at real risk, even if the message seems friendly." },
+      { text:"Don't share personal details, and tell a trusted adult", correct:true, feedback:"Right. You don't owe a stranger personal information. It's okay to stay quiet or say no." },
+    ]
+  },
+  {
+    type:"info",
+    eyebrow:"Warning signs", icon:"warn", iconTone:"warn",
+    title:"Messages that should make you pause",
+    warnList:[
+      "Asks for money, gift cards, or banking details",
+      "Wants to quickly move the chat to a different app",
+      "Creates urgency, like \u201cact now or something bad happens\u201d",
+      "Offers something that seems too good to be true",
+    ]
+  },
+  {
+    type:"info",
+    eyebrow:"You're in control", icon:"block", iconTone:"warn",
+    title:"Block & report",
+    body:"Every chat app lets you stop hearing from someone. Open their profile, then look for Block or Report. The person won't be able to message you again, and the app can review what happened.",
+    extra: `<div class="meter-row"><span class="meter-label">Your choice</span>${meter(0,0)}<span class="meter-note">always available, always okay to use</span></div>`
+  },
+  {
+    type:"info",
+    eyebrow:"Well done", icon:"check", iconTone:"ok",
+    title:"You've covered the basics",
+    body:"Text, chat apps, voice notes, and calls each use different amounts of data. When a message feels wrong, don't share personal details. It's always okay to block, report, or ask someone you trust.",
+  },
+];
+
+// ---- Render logic ----
+let idx = 0;
+let answered = {};
+
+const contentEl = document.getElementById("content");
+const progressEl = document.getElementById("progress");
+const counterEl = document.getElementById("counter");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+
+function renderProgress(){
+  progressEl.innerHTML = steps.map((_, i) => {
+    let cls = "dot";
+    if(i < idx) cls += " done";
+    if(i === idx) cls += " current";
+    return `<div class="${cls}"></div>`;
+  }).join("");
+}
+
+function renderStep(){
+  const s = steps[idx];
+  let html = "";
+  const toneClass = s.iconTone === "warn" ? "warn" : (s.iconTone === "ok" ? "ok" : "");
+
+  html += `<div class="eyebrow">${s.eyebrow}</div>`;
+  if(s.icon){
+    html += `<div class="icon-wrap ${toneClass}">${I[s.icon]}</div>`;
+  }
+  html += `<h1>${s.title}</h1>`;
+
+  if(s.type === "info"){
+    if(s.body) html += `<p class="body-text">${s.body}</p>`;
+    if(s.warnList){
+      html += `<div class="warn-list">` + s.warnList.map(w =>
+        `<div class="warn-item">${I.warn}<span>${w}</span></div>`
+      ).join("") + `</div>`;
+    }
+    if(s.extra) html += s.extra;
+  }
+
+  if(s.type === "quiz"){
+    html += `<div class="bubble ${s.bubble.tone}">"${s.bubble.text}"</div>`;
+    html += `<p class="body-text" style="margin-top:2px;font-weight:600;color:var(--ink)">${s.question}</p>`;
+    html += `<div class="options" id="quizOptions">`;
+    s.options.forEach((opt, i) => {
+      html += `<button class="option-btn" data-i="${i}">${opt.text}</button>`;
+    });
+    html += `</div>`;
+    html += `<div class="feedback" id="quizFeedback"></div>`;
+  }
+
+  contentEl.innerHTML = html;
+
+  if(s.type === "quiz"){
+    const already = answered[idx];
+    const btns = contentEl.querySelectorAll(".option-btn");
+    const fb = document.getElementById("quizFeedback");
+    btns.forEach(btn => {
+      const i = Number(btn.dataset.i);
+      if(already !== undefined){
+        btn.disabled = true;
+        if(s.options[i].correct) btn.classList.add("correct");
+        if(i === already && !s.options[i].correct) btn.classList.add("wrong");
+      }
+      btn.addEventListener("click", () => {
+        if(answered[idx] !== undefined) return;
+        answered[idx] = i;
+        renderStep();
+        const fbEl = document.getElementById("quizFeedback");
+        fbEl.textContent = s.options[i].feedback;
+        fbEl.className = "feedback show " + (s.options[i].correct ? "ok" : "no");
+      });
+    });
+    if(already !== undefined){
+      fb.textContent = s.options[already].feedback;
+      fb.className = "feedback show " + (s.options[already].correct ? "ok" : "no");
+    }
+  }
+
+  counterEl.textContent = `${idx+1}/${steps.length}`;
+  prevBtn.disabled = idx === 0;
+  nextBtn.textContent = idx === steps.length - 1 ? "Restart ↺" : "Next ▸";
+  renderProgress();
+}
+
+prevBtn.addEventListener("click", () => {
+  if(idx > 0){ idx--; renderStep(); }
+});
+nextBtn.addEventListener("click", () => {
+  if(idx === steps.length - 1){ idx = 0; answered = {}; renderStep(); return; }
+  idx++; renderStep();
+});
+document.addEventListener("keydown", (e) => {
+  if(e.key === "ArrowRight") nextBtn.click();
+  if(e.key === "ArrowLeft") prevBtn.click();
+});
+
+renderStep();
+</script>
+</body>
+</html>
